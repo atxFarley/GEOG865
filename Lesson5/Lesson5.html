@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Lesson 5 - Mapbox map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin="" />
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js" integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og==" crossorigin=""></script>
+    <style>
+        * {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        #mapid {
+            width: 1280px;
+            height: 768px;
+            border: 1px solid #ccc;
+        }
+
+        .leaflet-container {
+            background: #fff;
+        }
+      </style>
+    <script type="text/javascript">
+    function init() {
+        // create map and set center and zoom level
+        var map = new L.map('mapid');
+        map.setView([30.405392, -97.768595], 7);
+
+        var mapboxTileUrl = 'https://api.mapbox.com/styles/v1/alfarley/ck294x3i81eq31dmioy5glcha/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1IjoiYWxmYXJsZXkiLCJhIjoiOWgxTzVWRSJ9.wPUIEFeXYqsWzhTT8LlDng';
+
+        L.tileLayer(mapboxTileUrl, {
+            attribution: 'Background map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        var legend = L.control({ position: 'bottomright' });
+        legend.onAdd = function(map) {
+
+            var div = L.DomUtil.create('div', 'info legend');
+            labels = ['<strong>Legend</strong>'],
+                categories = ['Investment Properties', 'IRS Opportunity Zones'];
+            colors = ['#f32020', '#f97bb2']
+
+            for (var i = 0; i < categories.length; i++) {
+                console.log("color: " + colors[i])
+                div.innerHTML +=
+                    labels.push(
+                        '<mark style="background-color:' + colors[i] + '"></i> ' +
+                        (categories[i] ? categories[i] : '+'));
+
+            }
+            console.log("innerHTML: " + div.innerHTML);
+            div.innerHTML = labels.join('<br>');
+            console.log("innerHTML: " + div.innerHTML);
+            return div;
+        };
+        legend.addTo(map);
+    }
+    </script>
+</head>
+
+<body onload="init()">
+    <table border="0" cellpadding="3" cellspacing="0">
+        <tr>
+            <td valign="top" id="dataDiv" colspan="2">
+                <h1 id="title">Mapping Investments against IRS Opportunity Zones</h1>
+            </td>
+        </tr>
+        <tr>
+            <td valign="top">
+                <div id="mapid">
+                </div>
+            </td>
+            <td valign="top">
+                <p style="font-style: normal;font-size: 12px;">
+                    IR-2018-206, October 19, 2018
+                </p>
+                <p style="font-style: italic;font-size: 12px;">
+                    "Opportunity Zones, created by the 2017 Tax Cuts and Jobs Act, were designed to spur investment in distressed communities throughout the country through tax benefits. Under a nomination process completed in June, 8,761 communities in all 50 states, the District of Columbia and five U.S. territories were designated as qualified Opportunity Zones. Opportunity Zones retain their designation for 10 years. Investors may defer tax on almost any capital gain up to Dec. 31, 2026 by making an appropriate investment in a zone, making an election after December 21, 2017, and meeting other requirements."
+                </p>
+                <p style="font-style: normal;font-size: 12px;">
+                    <a href="https://www.irs.gov/newsroom/treasury-irs-issue-proposed-regulations-on-new-opportunity-zone-tax-incentive" target="_blank">See full news release on www.irs.gov</a>
+                </p>
+                <p style="font-style: normal;font-size: 12px;">
+                    <a href="https://www.irs.gov/newsroom/opportunity-zones-frequently-asked-questions" target="_blank">Opportunity Zones Frequently Asked Questions</a>
+                </p>
+                <p style="font-style: normal;font-size: 12px;">
+                    <a href="https://www.cdfifund.gov/Pages/Opportunity-Zones.aspx" target="_blank">Opportunity Zone Resources</a>
+                </p>
+                <p style="font-size: 10px;">
+                    <strong>Mapbox Tile Layer with Basemap</strong><br/>
+                    Tile Layer created in Mapbox Studio with customization to Basic style, county tileset overlaid, opportunity zone tileset overlaid, and investment area tileset (from dataset) overlaid<br/>
+                    <a href="https://api.mapbox.com/styles/v1/alfarley/ck294x3i81eq31dmioy5glcha.html?fresh=true&title=true&access_token=pk.eyJ1IjoiYWxmYXJsZXkiLCJhIjoiOWgxTzVWRSJ9.wPUIEFeXYqsWzhTT8LlDng#5.7/31.662705/-98.001721/0">Style URL</a>
+                    <br/><br/>
+                    <strong>
+                        Investment Areas Data Source:</strong> <br />
+                    100% <b>Fabrication</b> generated by Amy Farley in Mapbox
+                    <br />
+                    <i>*She only wishes she had investment properties in Qualified Opportunity Zones &lt;sigh&gt;</i><br/>
+                    <a href="https://studio.mapbox.com/datasets/alfarley/ck296vsoh0xlf2opkajzjcdpz/edit/">Mapbox Investment Areas Dataset</a>
+                    <br /><br />
+                    <strong>County Boundary Data Source:</strong> <br />
+                    U.S. Census Bureau, 2019 TIGER/Line® Shapefiles: Counties (and equivalent)
+                    <br />
+                    <a href="https://www.census.gov/cgi-bin/geo/shapefiles/index.php">TIGER/Line® Shapefiles</a>
+                    <br /><br />
+                    <strong>Opportunity Zones Data Source: </strong><br />U.S. Department of the Treasury Community Development Financial Institutions Fund<br />
+                    Data as of December 14, 2018<br />
+                    <a href="https://www.cdfifund.gov/Pages/Opportunity-Zones.aspx">https://www.cdfifund.gov/Pages/Opportunity-Zones.aspx </a> <br />
+                </p>
+                <p style="font-size: 10px;">
+                    The Geographic Information System (GIS) shapefile of all population census tracts designated as Qualified Opportunity Zones (QOZs) as well as all population census tracts originally eligible for designation as a QOZ for purposes of §§ 1400Z–1 and 1400Z–2 of the Internal Revenue Code (the Code).
+                    <br /><br />
+                    Section 1400Z–1(b)(1)(A) of the Code allowed the Chief Executive Officer (CEO) of each State to nominate a limited number of population census tracts to be designated as Zones for purposes of §§ 1400Z–1 and 1400Z–2. Revenue Procedure 2018–16, 2018–9 I.R.B. 383, provided guidance to State CEOs on the eligibility criteria and procedure for making these nominations.<br /> Section 1400Z–1(b)(1)(B) of the Code provides that after the Secretary receives notice of the nominations, the Secretary may certify the nominations and designate the nominated tracts as Zones.<br /><br />
+                    Section 1400Z–2 of the Code allows the temporary deferral of inclusion in gross income for certain realized gains to the extent that corresponding amounts are timely invested in a qualified opportunity fund. Investments in a qualified opportunity fund may also be eligible for additional tax benefits.
+                </p>
+            </td>
+        </tr>
+</body>
+
+</html>

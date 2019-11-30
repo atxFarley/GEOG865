@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Qualified Opportunity Zones</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin="" />
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type="text/javascript" src="http://maps.stamen.com/js/tile.stamen.js?v1.3.0"></script>
+    <style>
+        * {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        #mapid {
+            width: 1280px;
+            height: 768px;
+            border: 1px solid #ccc;
+        }
+
+        .leaflet-container {
+            background: #fff;
+        }
+      </style>
+    <script type="text/javascript">
+    function init() {
+        console.log("init()");
+        // create map and set center and zoom level
+
+        console.log("initialize map");
+        var map = new L.map('mapid');
+        map.setView([31.9686, -99.9018], 5);
+
+
+        try {
+
+            //basemaps
+            var layer = new L.StamenTileLayer("toner");
+            //go ahead and add this base layer now
+            layer.addTo(map);
+
+            console.log("add OSM as basemap");
+            var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            });
+
+            var layer2 = new L.StamenTileLayer("watercolor");
+            var layer3 = new L.StamenTileLayer("terrain");
+
+            //OVERLAYS
+            // create wms layer
+            console.log("add wms layer from geoserver pointed to postgres");
+            var qoz = L.tileLayer.wms('http://18.208.77.126:8080/geoserver/aws.postgres/wms', {
+                layers: 'aws.postgres:QOZ',
+                format: 'image/png',
+                transparent: true,
+                version: '1.1.0'
+            });
+            console.log("qoz: ");
+            qoz.addTo(map);
+
+            //add scale
+            L.control.scale({
+                position: "bottomleft",
+                imperial: true
+            }).addTo(map);
+
+            var basemaps = {
+                "Stamen Toner": layer,
+                "OpenStreetMap": osmLayer,
+                "Stamen Terrain": layer3,
+                "Stamen Watercolor": layer2,
+            };
+            var overlays = {
+                "Qualified Opportunity Zones": qoz
+            };
+            L.control.layers(basemaps, overlays).addTo(map);
+
+        } catch (e) {
+            console.error("error creating map layers: " + e);
+        }
+        // define event handler function for click events and register it
+        function Identify(e) {
+            // set parameters needed for GetFeatureInfo WMS request
+            console.log("Identify()");
+            var sw = map.options.crs.project(map.getBounds().getSouthWest());
+            var ne = map.options.crs.project(map.getBounds().getNorthEast());
+            var BBOX = sw.x + "," + sw.y + "," + ne.x + "," + ne.y;
+            var WIDTH = map.getSize().x;
+            var HEIGHT = map.getSize().y;
+
+            var X = Math.trunc(map.layerPointToContainerPoint(e.layerPoint).x);
+            var Y = Math.trunc(map.layerPointToContainerPoint(e.layerPoint).y);
+
+            // compose the URL for the request
+            var URL = 'http://18.208.77.126:8080/geoserver/aws.postgres/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetFeatureInfo&LAYERS=aws.postgres:QOZ&QUERY_LAYERS=aws.postgres:QOZ&BBOX=' + BBOX + '&FEATURE_COUNT=1&HEIGHT=' + HEIGHT + '&WIDTH=' + WIDTH + '&INFO_FORMAT=application%2Fjson&TILED=false&CRS=EPSG%3A3857&I=' + X + '&J=' + Y;
+
+            //send GetFeatureInfo as asynchronous HTTP request using jQuery $.ajax
+            $.ajax({
+                url: URL,
+                dataType: "json",
+                type: "GET",
+                success: function(data) {
+                    console.log("data sucess");
+                    if (data.features.length !== 0) { // at least one feature returned in response
+                        var returnedFeature = data.features[0]; // first feature from response
+                        console.log("returnedFeature: " + returnedFeature.properties);
+                        // Set up popup for clicked feature and open it
+                        var popup = new L.Popup({
+                            maxWidth: 300
+                        });
+
+                        popup.setContent("<b>Census Tract: " + returnedFeature.properties.censustrac + "</b><br />" + returnedFeature.properties.countyname + ", " + returnedFeature.properties.statename);
+                        popup.setLatLng(e.latlng);
+                        map.openPopup(popup);
+                    }
+                }
+            });
+        }
+        try {
+            console.log("add event listener");
+            map.addEventListener('click', Identify);
+        } catch (e) {
+            console.error("error caught adding event listener: " + e);
+        }
+
+    }
+    </script>
+</head>
+
+<body onload="init()">
+    <table border="0" cellpadding="3" cellspacing="0">
+        <tr>
+            <td valign="top" id="dataDiv" colspan="2">
+                <h1 id="title">Qualified Opportunity Zones</h1>
+            </td>
+        </tr>
+        <tr>
+            <td valign="top">
+                <div id="mapid">
+                </div>
+            </td>
+            <td valign="top">
+                <p style="font-style: normal;font-size: 12px;">
+                    IR-2018-206, October 19, 2018
+                </p>
+                <p style="font-style: italic;font-size: 12px;">
+                    "Opportunity Zones, created by the 2017 Tax Cuts and Jobs Act, were designed to spur investment in distressed communities throughout the country through tax benefits. Under a nomination process completed in June, 8,761 communities in all 50 states, the District of Columbia and five U.S. territories were designated as qualified Opportunity Zones. Opportunity Zones retain their designation for 10 years. Investors may defer tax on almost any capital gain up to Dec. 31, 2026 by making an appropriate investment in a zone, making an election after December 21, 2017, and meeting other requirements."
+                </p>
+                <p style="font-style: normal;font-size: 12px;">
+                    <a href="https://www.irs.gov/newsroom/treasury-irs-issue-proposed-regulations-on-new-opportunity-zone-tax-incentive" target="_blank">See full news release on www.irs.gov</a>
+                </p>
+                <p style="font-style: normal;font-size: 12px;">
+                    <a href="https://www.irs.gov/newsroom/opportunity-zones-frequently-asked-questions" target="_blank">Opportunity Zones Frequently Asked Questions</a>
+                </p>
+                <p style="font-style: normal;font-size: 12px;">
+                    <a href="https://www.cdfifund.gov/Pages/Opportunity-Zones.aspx" target="_blank">Opportunity Zone Resources</a>
+                </p>
+                <p style="font-size: 10px;">
+                    The Geographic Information System (GIS) shapefile of all population census tracts designated as Qualified Opportunity Zones (QOZs) as well as all population census tracts originally eligible for designation as a QOZ for purposes of §§ 1400Z–1 and 1400Z–2 of the Internal Revenue Code (the Code).
+                    <br /><br />
+                    Section 1400Z–1(b)(1)(A) of the Code allowed the Chief Executive Officer (CEO) of each State to nominate a limited number of population census tracts to be designated as Zones for purposes of §§ 1400Z–1 and 1400Z–2. Revenue Procedure 2018–16, 2018–9 I.R.B. 383, provided guidance to State CEOs on the eligibility criteria and procedure for making these nominations.<br /> Section 1400Z–1(b)(1)(B) of the Code provides that after the Secretary receives notice of the nominations, the Secretary may certify the nominations and designate the nominated tracts as Zones.<br /><br />
+                    Section 1400Z–2 of the Code allows the temporary deferral of inclusion in gross income for certain realized gains to the extent that corresponding amounts are timely invested in a qualified opportunity fund. Investments in a qualified opportunity fund may also be eligible for additional tax benefits.
+                </p>
+            </td>
+        </tr>
+</body>
+
+</html>
